@@ -21,10 +21,17 @@ dangerousFunction x = do
         _ -> return (x * 2)  -- Successful result for other inputs
 
 f 0 = 1
-f 1 = error "oops"
+f 1 = error "oops error in clean"
 f 2 = throw $ MyException "Error data"
 
-z = return (f 1) :: IO Int
+-- so result of clean func can't be catched even if we wrap it in IO via return
+wf = return (f 1) :: IO Int
+
+g :: Int -> IO Int
+g 0 = return 1
+g 1 = error "oops error in dirty"
+g 2 = throwIO $ MyException "Error data throwIO"
+
 
 -- Main function to demonstrate catching multiple exceptions
 main :: IO ()
@@ -39,8 +46,13 @@ main = do
         ]
     
     putStrLn $ "Result: " ++ show result
-    x <- catch (z::IO Int) (\(ErrorCall _) -> print 1 >> return 200)
-    putStrLn $ "Result: " ++ show x
+
+    gv <- catch (g 1) (\(ErrorCall _) -> print 1 >> return 200)
+    putStrLn $ "Result of dirty func: " ++ show gv
+   
+    -- so result of clean func can't be catched even if we wrap it in IO via return
+    x <- catch (wf::IO Int) (\(ErrorCall _) -> print 1 >> return 200)
+    putStrLn $ "Result of clean func: " ++ show x  -- we did't get here
 
 -- Handler for MyException
 handleMyException :: MyException -> IO Int
