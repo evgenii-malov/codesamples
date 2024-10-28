@@ -20,11 +20,17 @@ dangerousFunction x = do
 	4 -> throwIO (userError "This is a user-defined error!")
         _ -> return (x * 2)  -- Successful result for other inputs
 
+f 0 = 1
+f 1 = error "oops"
+f 2 = throw $ MyException "Error data"
+
+z = return (f 1) :: IO Int
+
 -- Main function to demonstrate catching multiple exceptions
 main :: IO ()
 main = do
     result <- catches 
-        (dangerousFunction 4)  -- Change this value to test different cases
+        (dangerousFunction 3)  -- Change this value to test different cases
         [ Handler handleMyException
         , Handler handleAnotherException
         , Handler handleErrorCall
@@ -33,6 +39,8 @@ main = do
         ]
     
     putStrLn $ "Result: " ++ show result
+    x <- catch (z::IO Int) (\(ErrorCall _) -> print 1 >> return 200)
+    putStrLn $ "Result: " ++ show x
 
 -- Handler for MyException
 handleMyException :: MyException -> IO Int

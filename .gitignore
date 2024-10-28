@@ -26,3 +26,4 @@ cabal.project.local~
 # System-specific ignores
 .DS_Store
 Thumbs.db
+*.swp
