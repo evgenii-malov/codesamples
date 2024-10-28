@@ -26,6 +26,7 @@ f 2 = throw $ MyException "Error data"
 
 -- so result of clean func can't be catched even if we wrap it in IO via return
 wf = return (f 1) :: IO Int
+wef = evaluate (f 1)
 
 g :: Int -> IO Int
 g 0 = return 1
@@ -49,10 +50,25 @@ main = do
 
     gv <- catch (g 1) (\(ErrorCall _) -> print 1 >> return 200)
     putStrLn $ "Result of dirty func: " ++ show gv
-   
+    
+    -- but why with evaluate we can catch ? 
+    x <- catch (wef) (\(ErrorCall _) -> print "Catched clean func error call" >> return 200)
+    putStrLn $ "Result of clean func wrapped with evaluete: " ++ show x  
+
     -- so result of clean func can't be catched even if we wrap it in IO via return
     x <- catch (wf::IO Int) (\(ErrorCall _) -> print 1 >> return 200)
-    putStrLn $ "Result of clean func: " ++ show x  -- we did't get here
+    putStrLn $ "Result of clean func wrapped with return: " ++ show x  -- we did't get here
+{-
+You cannot catch exceptions created by the error function in pure functions because they are not designed to handle such situations. Instead, you should use safer constructs that allow for proper error handling within the context of Haskell's type system and functional programming principles. If you need to handle errors gracefully, consider using types like Maybe, Either, or defining your own exception types within the IO monad.
+
+Why It Doesn't Work: The expression return (error "ops") does not force evaluation of (error "ops"). Instead, it wraps the unevaluated expression in an IO action. Since nothing is evaluated until you actually use the result (which doesn’t happen here), the exception is not thrown at that point, and thus it cannot be caught by the handler.
+Summary
+Catching Exceptions: To catch exceptions from functions like error, you must ensure that the expression is evaluated. Using evaluate achieves this by forcing evaluation.
+Using Return: Simply wrapping an expression in return does not evaluate it; hence, any exceptions thrown remain unevaluated and uncaught until they are forced later in execution.
+Conclusion
+In summary, if you want to catch exceptions from expressions that may fail (like those using error), you must force their evaluation using constructs like evaluate. Using just return will not work because it does not evaluate the expression, leaving any potential exceptions uncaught.
+-}
+
 
 -- Handler for MyException
 handleMyException :: MyException -> IO Int
